@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PowerMuscle Pro | Ultimate Exercise Database</title>
+    <style>
+        /* --- 1. CORE STYLES & VARIABLES --- */
+        :root {
+            --primary: #ff3b3f;      /* Electric Red */
+            --primary-dark: #d32f2f;
+            --dark-bg: #121212;      /* Deep Black */
+            --card-bg: #1e1e1e;      /* Dark Grey */
+            --text-light: #ffffff;
+            --text-gray: #b0b0b0;
+            --nav-height: 70px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Roboto', 'Segoe UI', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-light);
+            overflow-x: hidden;
+        }
+
+        /* --- 2. HEADER --- */
+        header {
+            background: rgba(0,0,0,0.9);
+            height: var(--nav-height);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 2px solid var(--primary);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(255, 59, 63, 0.3);
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        header span { color: var(--primary); font-weight: 900; }
+
+        /* --- 3. LAYOUT GRID --- */
+        .main-container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            min-height: calc(100vh - var(--nav-height));
+        }
+
+        /* --- 4. LEFT PANEL: ANATOMY --- */
+        .anatomy-panel {
+            flex: 0 0 400px; /* Fixed width for body */
+            background: #181818;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border-right: 1px solid #333;
+            position: relative;
+        }
+
+        .view-toggle {
+            display: flex;
+            background: #333;
+            border-radius: 30px;
+            padding: 5px;
+            margin-bottom: 20px;
+            width: 200px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #888;
+            padding: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 25px;
+            transition: 0.3s;
+        }
+
+        .toggle-btn.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 2px 10px rgba(255, 59, 63, 0.4);
+        }
+
+        /* SVG STYLES */
+        .body-svg {
+            height: 600px;
+            width: 100%;
+            filter: drop-shadow(0 0 10px rgba(0,0,0,0.5));
+            display: none; /* Hidden by default */
+        }
+        
+        .body-svg.active-view {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .muscle {
+            fill: #444;
+            stroke: #222;
+            stroke-width: 1;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .muscle:hover {
+            fill: var(--primary);
+            filter: drop-shadow(0 0 5px var(--primary));
+        }
+
+        .muscle.selected {
+            fill: var(--primary);
+            stroke: white;
+        }
+
+        .instruction-text {
+            margin-top: 1rem;
+            color: var(--text-gray);
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        /* --- 5. RIGHT PANEL: EXERCISES --- */
+        .content-panel {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            height: calc(100vh - var(--nav-height));
+        }
+
+        .section-header {
+            margin-bottom: 2rem;
+            border-left: 5px solid var(--primary);
+            padding-left: 1.5rem;
+        }
+
+        .section-header h2 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .section-header p { color: var(--text-gray); }
+
+        /* CARD GRID */
+        .exercise-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease, border 0.3s ease;
+            border: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            border-color: var(--primary);
+        }
+
+        .card-img-container {
+            width: 100%;
+            height: 200px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .card-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .card:hover .card-img { transform: scale(1.1); }
+
+        .card-body { padding: 1.5rem; flex: 1; display: flex; flex-direction: column; }
+
+        .difficulty {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            width: fit-content;
+        }
+        .diff-beg { background: #2ecc71; color: #000; }
+        .diff-int { background: #f1c40f; color: #000; }
+        .diff-adv { background: #e74c3c; color: #fff; }
+
+        .card h3 { margin-bottom: 10px; font-size: 1.4rem; }
+
+        .steps-list {
+            list-style: decimal inside;
+            color: #ddd;
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .pro-tip {
+            margin-top: auto;
+            background: rgba(255, 59, 63, 0.1);
+            padding: 10px;
+            border-left: 3px solid var(--primary);
+            font-size: 0.85rem;
+            color: #ff8a8d;
+        }
+
+        /* --- ANIMATIONS --- */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 900px) {
+            .main-container { flex-direction: column; }
+            .anatomy-panel { width: 100%; border-right: none; border-bottom: 1px solid #333; }
+            .body-svg { height: 400px; }
+            .content-panel { height: auto; overflow: visible; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Power<span>Muscle</span></h1>
+    </header>
+
+    <div class="main-container">
+        
+        <aside class="anatomy-panel">
+            <div class="view-toggle">
+                <button class="toggle-btn active" onclick="switchView('front')">Front</button>
+                <button class="toggle-btn" onclick="switchView('back')">Back</button>
+            </div>
+
+            <svg id="svg-front" class="body-svg active-view" viewBox="0 0 200 500">
+                <path d="M100 20 Q115 20 115 35 Q115 55 100 55 Q85 55 85 35 Q85 20 100 20" fill="#555" />
+                
+                <path class="muscle" id="shoulders-front-trap" d="M85 55 L70 65 L100 70 L130 65 L115 55 Z" onclick="selectMuscle('shoulders')" />
+
+                <path class="muscle" id="shoulders-front-L" d="M70 65 L50 70 L45 90 L65 85 Z" onclick="selectMuscle('shoulders')" />
+                <path class="muscle" id="shoulders-front-R" d="M130 65 L150 70 L155 90 L135 85 Z" onclick="selectMuscle('shoulders')" />
+
+                <path class="muscle" id="chest" d="M65 85 L100 90 L135 85 L130 115 L100 120 L70 115 Z" onclick="selectMuscle('chest')" />
+
+                <path class="muscle" id="biceps-L" d="M45 90 L35 120 L55 125 L65 100 Z" onclick="selectMuscle('biceps')" />
+                <path class="muscle" id="biceps-R" d="M155 90 L165 120 L145 125 L135 100 Z" onclick="selectMuscle('biceps')" />
+
+                <path class="muscle" id="forearms-L" d="M35 120 L25 150 L45 155 L55 125 Z" onclick="selectMuscle('forearms')" />
+                <path class="muscle" id="forearms-R" d="M165 120 L175 150 L155 155 L145 125 Z" onclick="selectMuscle('forearms')" />
+
+                <path class="muscle" id="abs" d="M70 115 L130 115 L125 160 L75 160 Z" onclick="selectMuscle('abs')" />
+
+                <path class="muscle" id="obliques" d="M70 115 L55 110 L55 150 L75 160 Z M130 115 L145 110 L145 150 L125 160 Z" onclick="selectMuscle('abs')" />
+
+                <path class="muscle" id="quads-L" d="M75 160 L55 180 L65 240 L90 230 L95 180 Z" onclick="selectMuscle('quads')" />
+                <path class="muscle" id="quads-R" d="M125 160 L145 180 L135 240 L110 230 L105 180 Z" onclick="selectMuscle('quads')" />
+
+                <path class="muscle" id="calves-L" d="M65 240 L60 290 L80 290 L90 240 Z" onclick="selectMuscle('calves')" />
+                <path class="muscle" id="calves-R" d="M135 240 L140 290 L120 290 L110 240 Z" onclick="selectMuscle('calves')" />
+            </svg>
+
+            <svg id="svg-back" class="body-svg" viewBox="0 0 200 500">
+                <path d="M100 20 Q115 20 115 35 Q115 55 100 55 Q85 55 85 35 Q85 20 100 20" fill="#555" />
+
+                <path class="muscle" id="traps" d="M85 55 L115 55 L140 70 L100 110 L60 70 Z" onclick="selectMuscle('back')" />
+
+                <path class="muscle" id="shoulders-back-L" d="M60 70 L40 75 L45 95 L65 90 Z" onclick="selectMuscle('shoulders')" />
+                <path class="muscle" id="shoulders-back-R" d="M140 70 L160 75 L155 95 L135 90 Z" onclick="selectMuscle('shoulders')" />
+
+                <path class="muscle" id="lats" d="M65 90 L100 110 L135 90 L130 140 L100 160 L70 140 Z" onclick="selectMuscle('back')" />
+
+                <path class="muscle" id="triceps-L" d="M40 75 L30 110 L50 115 L60 90 Z" onclick="selectMuscle('triceps')" />
+                <path class="muscle" id="triceps-R" d="M160 75 L170 110 L150 115 L140 90 Z" onclick="selectMuscle('triceps')" />
+
+                <path class="muscle" id="lower-back" d="M70 140 L100 160 L130 140 L125 160 L75 160 Z" onclick="selectMuscle('back')" />
+
+                <path class="muscle" id="glutes" d="M75 160 L125 160 L135 190 L100 200 L65 190 Z" onclick="selectMuscle('glutes')" />
+
+                <path class="muscle" id="hamstrings-L" d="M65 190 L55 240 L90 240 L85 200 Z" onclick="selectMuscle('hamstrings')" />
+                <path class="muscle" id="hamstrings-R" d="M135 190 L145 240 L110 240 L115 200 Z" onclick="selectMuscle('hamstrings')" />
+
+                <path class="muscle" id="calves-back-L" d="M55 240 L50 290 L80 290 L90 240 Z" onclick="selectMuscle('calves')" />
+                <path class="muscle" id="calves-back-R" d="M145 240 L150 290 L120 290 L110 240 Z" onclick="selectMuscle('calves')" />
+            </svg>
+
+            <p class="instruction-text">Touch a muscle group to reveal exercises.</p>
+        </aside>
+
+        <main class="content-panel">
+            <div class="section-header">
+                <h2 id="section-title">Welcome</h2>
+                <p id="section-desc">Select a muscle group from the 3D model to begin your workout.</p>
+            </div>
+
+            <div class="exercise-grid" id="grid">
+                </div>
+        </main>
+    </div>
+
+    <script>
+        // --- 1. HUGE EXERCISE DATABASE ---
+        // Using Unsplash Images for realism. 
+        const database = {
+            chest: [
+                {
+                    name: "Barbell Bench Press",
+                    level: "int",
+                    img: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=500&q=80",
+                    steps: ["Lie on bench, feet flat on floor.", "Grip bar slightly wider than shoulder-width.", "Lower bar to mid-chest.", "Press up explosively."],
+                    tip: "Keep elbows at 45-degree angle to protect shoulders."
+                },
+                {
+                    name: "Incline Dumbbell Press",
+                    level: "int",
+                    img: "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=500&q=80",
+                    steps: ["Set bench to 30-45 degrees.", "Press dumbbells up over upper chest.", "Lower slowly until stretch is felt."],
+                    tip: "Focus on the upper chest contraction."
+                },
+                {
+                    name: "Cable Fly",
+                    level: "adv",
+                    img: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=500&q=80",
+                    steps: ["Stand in center of cable machine.", "Pull handles together in front of chest.", "Squeeze hard at the center."],
+                    tip: "Imagine hugging a large tree."
+                },
+                {
+                    name: "Push Up",
+                    level: "beg",
+                    img: "https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?w=500&q=80",
+                    steps: ["Hands shoulder-width apart.", "Keep body straight.", "Lower until chest touches floor.", "Push back up."],
+                    tip: "Engage core to prevent back sagging."
+                }
+            ],
+            back: [
+                {
+                    name: "Pull Up",
+                    level: "int",
+                    img: "https://images.unsplash.com/photo-1598971639058-211a73217741?w=500&q=80",
+                    steps: ["Hang from bar with wide grip.", "Pull chest up to the bar.", "Lower completely to dead hang."],
+                    tip: "Imagine driving your elbows into your pockets."
+                },
+                {
+                    name: "Bent Over Barbell Row",
+                    level: "adv",
+                    img: "https://images.unsplash.com/photo-1603287681836-e60567a2d119?w=500&q=80",
+                    steps: ["Bend at hips, back straight.", "Pull bar to lower chest/upper abs.", "Squeeze shoulder blades."],
+                    tip: "Do not use momentum to jerk the weight."
+                },
+                {
+                    name: "Lat Pulldown",
+                    level: "beg",
+                    img: "https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=500&q=80",
+                    steps: ["Sit firmly, grip bar wide.", "Pull bar down to upper chest.", "Control the release up."],
+                    tip: "Lean back slightly, but don't swing."
+                }
+            ],
+            shoulders: [
+                {
+                    name: "Overhead Press",
+                    level: "int",
+                    img: "https://images.unsplash.com/photo-1541600383005-565c949cf777?w=500&q=80",
+                    steps: ["Stand with bar at collarbone.", "Press bar straight up.", "Lock out elbows at top."],
+                    tip: "Move head out of the way, then back under bar."
+                },
+                {
+                    name: "Lateral Raise",
+                    level: "beg",
+                    img: "https://images.unsplash.com/photo-1534438097545-a2c22c57f01b?w=500&q=80",
+                    steps: ["Hold dumbbells at side.", "Raise arms to side until parallel.", "Lower slowly."],
+                    tip: "Lead with elbows, like pouring a pitcher of water."
+                },
+                {
+                    name: "Face Pull",
+                    level: "int",
+                    img: "https://plus.unsplash.com/premium_photo-1664109999537-088e7d964da2?w=500&q=80",
+                    steps: ["Use rope attachment at face height.", "Pull rope to forehead.", "Externally rotate shoulders."],
+                    tip: "Great for rear delts and rotator cuff health."
+                }
+            ],
+            biceps: [
+                {
+                    name: "Barbell Curl",
+                    level: "beg",
+                    img: "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=500&q=80",
+                    steps: ["Stand straight, grip bar.", "Curl weight to shoulders.", "Lower fully."],
+                    tip: "Keep elbows pinned to your ribs."
+                },
+                {
+                    name: "Hammer Curl",
+                    level: "beg",
+                    img: "https://images.unsplash.com/photo-1584466977773-e625c37cdd50?w=500&q=80",
+                    steps: ["Palms facing each other.", "Curl dumbbell up.", "Target brachialis muscle."],
+                    tip: "Do not swing your torso."
+                }
+            ],
+            triceps: [
+                {
+                    name: "Tricep Pushdown",
+                    level: "beg",
+                    img: "https://images.unsplash.com/photo-1534367507873-d2d7e24c797f?w=500&q=80",
+                    steps: ["Use cable rope.", "Keep elbows at sides.", "Push down and separate rope."],
+                    tip: "Only your forearms should move."
+                },
+                {
+                    name: "Skullcrushers",
+                    level: "int",
+                    img: "https://images.unsplash.com/photo-1581009137042-c5e1277ea186?w=500&q=80",
+                    steps: ["Lie on bench, bar over eyes.", "Bend elbows to lower bar to forehead.", "Extend back up."],
+                    tip: "Keep elbows pointing at ceiling."
+                }
+            ],
+            quads: [
+                {
+                    name: "Barbell Squat",
+                    level: "adv",
+                    img: "https://images.unsplash.com/photo-1574680096141-1cddd32e0340?w=500&q=80",
+                    steps: ["Bar on upper back.", "Squat deep, knees out.", "Drive up through floor."],
+                    tip: "Keep chest up and core braced."
+                },
+                {
+                    name: "Leg Extension",
+                    level: "beg",
+                    img: "https://images.unsplash.com/photo-1579364046732-c21c2177730d?w=500&q=80",
+                    steps: ["Sit in machine.", "Extend legs until straight.", "Squeeze quads at top."],
+                    tip: "Don't kick fast, move with control."
+                },
+                {
+                    name: "Walking Lunge",
+                    level: "int",
+                    img: "https://images.unsplash.com/photo-1534368420009-338c232812dd?w=500&q=80",
+                    steps: ["Step forward.", "Lower back knee to ground.", "Drive off front foot."],
+                    tip: "Keep torso upright."
+                }
+            ],
+            hamstrings: [
+                {
+                    name: "Romanian Deadlift",
+                    level: "adv",
+                    img: "https://images.unsplash.com/photo-1567598008481-a639909a8f79?w=500&q=80",
+                    steps: ["Hold bar, knees slightly bent.", "Hinge hips back.", "Lower bar until stretch.", "Squeeze glutes to return."],
+                    tip: "Keep bar close to your legs."
+                },
+                {
+                    name: "Lying Leg Curl",
+                    level: "beg",
+                    img: "https://images.unsplash.com/photo-1566241142559-40e1dab266c6?w=500&q=80",
+                    steps: ["Lie face down.", "Curl heels to glutes.", "Lower slowly."],
+                    tip: "Keep hips pressed into the pad."
+                }
+            ],
+            glutes: [
+                {
+                    name: "Hip Thrust",
+                    level: "int",
+                    img: "https://images.unsplash.com/photo-1534850336045-c6c6d287f89e?w=500&q=80",
+                    steps: ["Back on bench, bar on hips.", "Drive hips up.", "Squeeze glutes at top."],
+                    tip: "Chin tucked, look forward."
+                },
+                {
+                    name: "Glute Kickback",
+                    level: "beg",
+                    img: "https://images.unsplash.com/photo-1607962837359-92e345b583c9?w=500&q=80",
+                    steps: ["On all fours or machine.", "Kick leg back and up.", "Squeeze glute."],
+                    tip: "Don't arch your lower back."
+                }
+            ],
+            abs: [
+                {
+                    name: "Plank",
+                    level: "beg",
+                    img: "https://images.unsplash.com/photo-1566241440091-ec10de8db2e1?w=500&q=80",
+                    steps: ["Forearms on ground.", "Body straight line.", "Hold."],
+                    tip: "Squeeze glutes to fix posture."
+                },
+                {
+                    name: "Hanging Leg Raise",
+                    level: "adv",
+                    img: "https://images.unsplash.com/photo-1522898467493-49726bf28798?w=500&q=80",
+                    steps: ["Hang from bar.", "Raise legs until parallel or higher.", "Lower slowly."],
+                    tip: "Avoid swinging."
+                }
+            ],
+            calves: [
+                {
+                    name: "Standing Calf Raise",
+                    level: "beg",
+                    img: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=500&q=80",
+                    steps: ["Toes on edge of step.", "Lower heel down.", "Raise high on toes."],
+                    tip: "Pause at the top for max contraction."
+                }
+            ]
+        };
+
+        // --- 2. LOGIC ---
+
+        // State Variables
+        let currentView = 'front'; // 'front' or 'back'
+
+        const svgFront = document.getElementById('svg-front');
+        const svgBack = document.getElementById('svg-back');
+        const grid = document.getElementById('grid');
+        const title = document.getElementById('section-title');
+        const desc = document.getElementById('section-desc');
+        const btns = document.querySelectorAll('.toggle-btn');
+        const musclePaths = document.querySelectorAll('.muscle');
+
+        // Toggle View Function
+        function switchView(view) {
+            currentView = view;
+            
+            // Toggle Buttons
+            btns.forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Toggle SVGs
+            if(view === 'front') {
+                svgFront.classList.add('active-view');
+                svgBack.classList.remove('active-view');
+            } else {
+                svgFront.classList.remove('active-view');
+                svgBack.classList.add('active-view');
+            }
+        }
+
+        // Select Muscle Function
+        function selectMuscle(muscleGroup) {
+            // Visual Feedback on SVG
+            musclePaths.forEach(p => p.classList.remove('selected'));
+            // Highlight all paths that belong to this group (e.g. left and right bicep)
+            const targets = document.querySelectorAll(`[onclick="selectMuscle('${muscleGroup}')"]`);
+            targets.forEach(t => t.classList.add('selected'));
+
+            // Render Content
+            renderExercises(muscleGroup);
+        }
+
+        // Render Cards
+        function renderExercises(muscle) {
+            // Update Headers
+            title.innerText = muscle.toUpperCase() + " EXERCISES";
+            desc.innerText = `Best exercises to build your ${muscle}.`;
+
+            // Clear Grid
+            grid.innerHTML = '';
+
+            // Get Data
+            const exercises = database[muscle];
+
+            if (!exercises) {
+                grid.innerHTML = `<p style="color:white;">No specific exercises added for this detailed muscle yet. Try Chest, Back, Legs, etc.</p>`;
+                return;
+            }
+
+            // Create Cards
+            exercises.forEach(ex => {
+                let diffClass = '';
+                if(ex.level === 'beg') diffClass = 'diff-beg';
+                if(ex.level === 'int') diffClass = 'diff-int';
+                if(ex.level === 'adv') diffClass = 'diff-adv';
+                
+                let diffText = ex.level === 'beg' ? 'Beginner' : ex.level === 'int' ? 'Intermediate' : 'Advanced';
+
+                const html = `
+                <div class="card">
+                    <div class="card-img-container">
+                        <img src="${ex.img}" alt="${ex.name}" class="card-img">
+                    </div>
+                    <div class="card-body">
+                        <span class="difficulty ${diffClass}">${diffText}</span>
+                        <h3>${ex.name}</h3>
+                        <ul class="steps-list">
+                            ${ex.steps.map(s => `<li>${s}</li>`).join('')}
+                        </ul>
+                        <div class="pro-tip">
+                            <strong>🔥 Pro Tip:</strong> ${ex.tip}
+                        </div>
+                    </div>
+                </div>
+                `;
+                grid.innerHTML += html;
+            });
+        }
+
+        // Init with Chest
+        selectMuscle('chest');
+
+    </script>
+</body>
+</html>
